@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ubytovací systém</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app"></div>
+
+    <script type="importmap">
+        {
+            "imports": {
+                "./api/MockApi.js": "./src/api/MockApi.js",
+                "./business/RentalUnit.js": "./src/business/RentalUnit.js",
+                "./business/Reservations.js": "./src/business/Reservations.js",
+                "./infrastructure/Auth.js": "./src/infrastructure/Auth.js",
+                "./infrastructure/Dispatcher.js": "./src/infrastructure/Dispatcher.js",
+                "./infrastructure/Handlers.js": "./src/infrastructure/Handlers.js",
+                "./infrastructure/Renders.js": "./src/infrastructure/Renders.js",
+                "./infrastructure/Router.js": "./src/infrastructure/Router.js",
+                "./infrastructure/Selectors.js": "./src/infrastructure/Selectors.js",
+                "./infrastructure/State.js": "./src/infrastructure/State.js",
+                "./tests/RentalUnit.test.js": "./src/tests/RentalUnit.test.js"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import { initRouter } from "./src/infrastructure/Router.js";
+        import { authService } from "./src/infrastructure/Auth.js";
+        import { runRentalUnitTests } from "./src/tests/RentalUnit.test.js";
+        import { handleLoadUnits } from "./src/infrastructure/Handlers.js";
+        import { renderApp } from "./src/infrastructure/Renders.js";
+
+        // 1. Restore user session from localStorage
+        authService.checkPersistence();
+
+        // 2. Initialize router (hash-based navigation)
+        initRouter();
+
+        // 3. Load initial data from Mock API
+        await handleLoadUnits();
+
+        // 4. Run unit tests (optional, can be removed in production)
+        runRentalUnitTests();
+
+        // 5. Initial render
+        renderApp();
+
+        console.log("Aplikace spuštěna!");
+    </script>
+</body>
+</html>

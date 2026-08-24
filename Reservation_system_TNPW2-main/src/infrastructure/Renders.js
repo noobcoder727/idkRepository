@@ -399,6 +399,7 @@ export const renderDetail = (state) => {
 };
 
 // Make createReservation available globally for the form
+// Make createReservation available globally for the form
 window.createReservation = async () => {
     const unitSelect = document.getElementById("unitSelect");
     const dateFrom = document.getElementById("dateFrom");
@@ -409,12 +410,25 @@ window.createReservation = async () => {
         return;
     }
 
+    const unitId = parseInt(unitSelect.value);
+    if (isNaN(unitId)) {
+        alert("Prosím vyberte platné ubytování");
+        return;
+    }
+
     const data = {
-        unitId: parseInt(unitSelect.value),
+        unitId: unitId,
         dateFrom: dateFrom.value,
         dateTo: dateTo.value,
         guestId: getState().auth.user?.id || Date.now()
     };
 
+    // Validate dates
+    if (new Date(data.dateTo) <= new Date(data.dateFrom)) {
+        alert("Datum odjezdu musí být pozdější než datum příjezdu");
+        return;
+    }
+
     await handleCreateReservation(data);
 };
+

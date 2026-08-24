@@ -6,7 +6,7 @@ import { validateReservation } from "../business/Reservations.js";
 import { getUnitById } from "./Selectors.js";
 import { getState } from "./State.js";
 
-/* AUTH HANDLERS */
+// AUTH HANDLERS 
 
 // přihlášení (využívá Auth service → ten už dispatchuje)
 export const handleLogin = (username, role) => {
@@ -18,7 +18,7 @@ export const handleLogout = () => {
     authService.logout();
 };
 
-/* UNIT HANDLERS (ubytování) */
+// UNIT HANDLERS (ubytování)
 
 // publikování ubytování
 export const handlePublishUnit = (unitId) => {
@@ -37,18 +37,20 @@ export const handleStartMaintenance = (unitId) => {
 };
 
 
-/* RESERVATION HANDLERS */
+// RESERVATION HANDLERS 
 
+// vytvoření rezervace
 // vytvoření rezervace
 export const handleCreateReservation = async (data) => {
     dispatch({ type: "API_CALL_START" });
 
     try {
-        const reservation = await api.createReservation({
-            ...data,
-            id: Date.now(),
-            status: "CREATED"
-        });
+        // Validate data before sending to API
+        if (!data.unitId || !data.dateFrom || !data.dateTo) {
+            throw new Error("Všechna pole jsou povinná");
+        }
+
+        const reservation = await api.createReservation(data);
 
         dispatch({
             type: "CREATE_RESERVATION",
@@ -57,11 +59,20 @@ export const handleCreateReservation = async (data) => {
 
         dispatch({ type: "API_CALL_SUCCESS" });
 
+        // Clear the form after successful creation
+        const dateFrom = document.getElementById("dateFrom");
+        const dateTo = document.getElementById("dateTo");
+        if (dateFrom) dateFrom.value = new Date().toISOString().split('T')[0];
+        if (dateTo) dateTo.value = new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0];
+
+        alert("Rezervace byla úspěšně vytvořena!");
+
     } catch (error) {
         dispatch({
             type: "API_CALL_ERROR",
             payload: { error: error.message }
         });
+        alert(`Chyba: ${error.message}`);
     }
 };
 
@@ -109,14 +120,14 @@ export const handleCancelReservation = async (id) => {
     }
 };
 
-/* NAVIGATION HANDLERS */
+// NAVIGATION HANDLERS 
 
 // změna stránky (router to zachytí)
 export const handleNavigate = (route, id = null) => {
     window.location.hash = id ? `${route}/${id}` : route;
 };
 
-/* UI / ASYNC HANDLERS */
+// UI / ASYNC HANDLERS 
 
 // načtení částí (GET)
 export const handleLoadUnits = async () => {

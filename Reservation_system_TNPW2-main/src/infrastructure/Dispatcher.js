@@ -6,32 +6,38 @@ export const dispatch = (action) => {
     
     switch (action.type) {
         //akce pro entitu RentalUnit
-        case "PUBLISH_UNIT" : {
-            //zde později volání business logiky pro kontrolu
-
-            //zatím simulace změny pro tonyho
-            const newUnits = currentState.rentalUnits.map(unit => unit.id ===action.payload.unitID ? {
-                ...unit, status: "ACTIVE"
-            } : unit);
-            setState({rentalUnits: newUnits});
-            break;
-        }
-        //akce pro IR03 - Async (tony)
-        case "API_CALL_START" : {
-            //načítací kolečko
-            setState({ui: {...currentState.ui, isLoading: true, error: null}});
-            break;
-        }
-        case "API_CALL_SUCCESS": {
-            //data stažena - tony v payloadu posílá stažená ubytka
+        case "PUBLISH_UNIT": {
+            const newUnits = currentState.rentalUnits.map(unit => 
+                unit.id === action.payload.unitID ? {
+                    ...unit, 
+                    status: "ACTIVE"
+                } : unit
+            );
             setState({
-                rentalUnits: action.payload.units,
-                ui: {...currentState.ui, isLoading: false}
+                ...currentState, 
+                rentalUnits: newUnits
             });
             break;
         }
-        case "NAVIGATE" : {
+        //akce pro IR03 - Async (tony)
+        case "API_CALL_START": {
             setState({
+                ...currentState, 
+                ui: {...currentState.ui, isLoading: true, error: null}
+            });
+            break;
+        }
+        case "API_CALL_SUCCESS": {
+            setState({
+                ...currentState, 
+                rentalUnits: action.payload.units,
+                ui: {...currentState.ui, isLoading: false, error: null}
+            });
+            break;
+        }
+        case "NAVIGATE": {
+            setState({
+                ...currentState,  // <-- ADD THIS
                 navigation: {
                     currentRoute: action.payload.route,
                     activeId: action.payload.activeId
@@ -39,64 +45,80 @@ export const dispatch = (action) => {
             });
             break;
         }
-        case 'AUTH_LOGIN_SUCCESS': {
-            setState({ auth: { ...currentState.auth, user: action.payload.user } });
+        case "AUTH_LOGIN_SUCCESS": {
+            setState({
+                ...currentState,  // <-- ADD THIS
+                auth: { ...currentState.auth, user: action.payload.user }
+            });
             break;
-    }
-
-        case 'AUTH_LOGOUT': {
-            setState({ auth: { ...currentState.auth, user: null } });
+        }
+        case "AUTH_LOGOUT": {
+            setState({
+                ...currentState,  // <-- ADD THIS
+                auth: { ...currentState.auth, user: null }
+            });
             break;
-    }
-    case "CREATE_RESERVATION": {
-        const newReservations = [...currentState.reservations, action.payload];
-        setState({ reservations: newReservations });
-        break;
-    }
+        }
+        case "CREATE_RESERVATION": {
+            const newReservations = [...currentState.reservations, action.payload];
+            setState({
+                ...currentState,  // <-- ADD THIS
+                reservations: newReservations
+            });
+            break;
+        }
     
-    case "APPROVE_RESERVATION": {
-        const updated = currentState.reservations.map(r =>
-            r.id === action.payload.reservationId
-                ? { ...r, status: "APPROVED" }
-                : r
-        );
-        setState({ reservations: updated });
-        break;
-    }
-    
-    case "CANCEL_RESERVATION": {
-        const updated = currentState.reservations.map(r =>
-            r.id === action.payload.reservationId
-                ? { ...r, status: "CANCELLED" }
-                : r
-        );
-        setState({ reservations: updated });
-        break;
-    }
+        case "APPROVE_RESERVATION": {
+            const updated = currentState.reservations.map(r =>
+                r.id === action.payload.reservationId
+                    ? { ...r, status: "APPROVED" }
+                    : r
+            );
+            setState({
+                ...currentState,  // <-- ADD THIS
+                reservations: updated
+            });
+            break;
+        }
+        case "CANCEL_RESERVATION": {
+            const updated = currentState.reservations.map(r =>
+                r.id === action.payload.reservationId
+                    ? { ...r, status: "CANCELLED" }
+                    : r
+            );
+            setState({
+                ...currentState,  // <-- ADD THIS
+                reservations: updated
+            });
+            break;
+        }
 
-    case "API_CALL_ERROR": {
-        setState({
-            ui: {
-                ...currentState.ui,
-                isLoading: false,
-                error: action.payload.error
-            }
-        });
-        break;
-    }
-    case "START_MAINTENANCE": {
-        const updated = currentState.rentalUnits.map(unit =>
-            unit.id === action.payload.unitID
-                ? { ...unit, status: "MAINTENANCE" }
-                : unit
-        );
-        setState({ rentalUnits: updated });
-        break;
-    }
+        case "API_CALL_ERROR": {
+            setState({
+                ...currentState,  // <-- Already has this, good!
+                ui: {
+                    ...currentState.ui,
+                    isLoading: false,
+                    error: action.payload.error
+                }
+            });
+            break;
+        }
 
-    default:
+        case "START_MAINTENANCE": {
+            const updated = currentState.rentalUnits.map(unit =>
+                unit.id === action.payload.unitID
+                    ? { ...unit, status: "MAINTENANCE" }
+                    : unit
+            );
+            setState({
+                ...currentState,  // <-- ADD THIS
+                rentalUnits: updated
+            });
+            break;
+        }
+
+        default:
             console.warn(`Neznámá akce: ${action.type}`);
     }
-    
-    
 }

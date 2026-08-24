@@ -30,13 +30,23 @@ export const api = {
     // POST reservation
     createReservation: async (reservation) => {
         await delay(800);
-
+    
         if (!reservation.unitId) {
-            throw new Error("Neplatná rezervace");
+            throw new Error("Neplatná rezervace: chybí ID ubytování");
         }
-
-        mockReservations.push(reservation);
-        return reservation;
+    
+        // Create a complete reservation object with ID
+        const newReservation = {
+            id: Date.now(),
+            unitId: reservation.unitId,
+            guestId: reservation.guestId || 1,
+            dateFrom: reservation.dateFrom,
+            dateTo: reservation.dateTo,
+            status: reservation.status || "CREATED"
+        };
+    
+        mockReservations.push(newReservation);
+        return newReservation;
     },
 
     // PATCH reservation

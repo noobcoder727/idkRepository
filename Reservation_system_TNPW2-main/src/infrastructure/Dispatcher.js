@@ -28,11 +28,31 @@ export const dispatch = (action) => {
             break;
         }
         case "API_CALL_SUCCESS": {
-            setState({
+            /*setState({
                 ...currentState, 
                 rentalUnits: action.payload.units,
                 ui: {...currentState.ui, isLoading: false, error: null}
             });
+            break;*/
+            console.log("Dispatcher: API_CALL_SUCCESS received");
+            console.log("Dispatcher: action:", action);
+            console.log("Dispatcher: action.payload:", action.payload);
+            console.log("Dispatcher: action.payload?.units:", action.payload?.units);
+            
+            // Add safety check
+            const units = action.payload?.units || [];
+            console.log("Dispatcher: units to set:", units);
+            
+            setState({
+                ...currentState,
+                rentalUnits: units,
+                ui: {
+                    ...currentState.ui, 
+                    isLoading: false, 
+                    error: null
+                }
+            });
+            console.log("Dispatcher: State updated");
             break;
         }
         case "NAVIGATE": {

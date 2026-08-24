@@ -1,10 +1,12 @@
 // IR06 – Renderovací logika (View composition) - Duy Anh Le
+// IR06 – Renderovací logika (View composition) - Duy Anh Le
 import { getState } from "./State.js";
 import { getUnitById } from "./Selectors.js";
 import { getAllReservations } from "./Selectors.js";
 import { isAdmin } from "./Selectors.js";
 import {
     handlePublishUnit,
+    handleStartMaintenance,
     handleCreateReservation,
     handleApproveReservation,
     handleCancelReservation,
@@ -146,12 +148,12 @@ export const renderHome = (state) => {
     header.appendChild(title);
     container.appendChild(header);
 
-    // Reservation form (if logged in)
-    if (state.auth.user) {
+    // FIX: Only admin can create reservations
+    if (state.auth.user && isAdmin(state)) {
         const form = document.createElement("div");
         form.className = "reservation-form";
         form.innerHTML = `
-            <h3>Vytvořit rezervaci</h3>
+            <h3>Vytvořit rezervaci (Admin)</h3>
             <div class="form-group">
                 <div>
                     <label>Ubytování</label>
@@ -173,6 +175,14 @@ export const renderHome = (state) => {
             </div>
         `;
         container.appendChild(form);
+    } else if (state.auth.user && !isAdmin(state)) {
+        // FIX: Regular users see a message that they can only reserve through the reservations page
+        const userMessage = document.createElement("div");
+        userMessage.className = "reservation-form";
+        userMessage.innerHTML = `
+            <p style="color:#2a69ac;">Pro vytvoření rezervace přejděte na stránku <strong>Rezervace</strong>.</p>
+        `;
+        container.appendChild(userMessage);
     } else {
         const loginPrompt = document.createElement("div");
         loginPrompt.className = "reservation-form";
@@ -220,28 +230,27 @@ export const renderUnitCard = (unit, state) => {
     detailBtn.onclick = () => handleNavigate("#unit", unit.id);
     actions.appendChild(detailBtn);
 
-    // ADMIN akce
-    if (state.auth.user?.role === "admin" && unit.status === "DRAFT") {
-        const publishBtn = document.createElement("button");
-        publishBtn.className = "btn btn-warning btn-sm";
-        publishBtn.innerText = "Publikovat";
-        publishBtn.onclick = () => handlePublishUnit(unit.id);
-        actions.appendChild(publishBtn);
-    }
+    // ADMIN akce - only for admin
+    if (isAdmin(state)) {
+        if (unit.status === "DRAFT") {
+            const publishBtn = document.createElement("button");
+            publishBtn.className = "btn btn-warning btn-sm";
+            publishBtn.innerText = "Publikovat";
+            publishBtn.onclick = () => handlePublishUnit(unit.id);
+            actions.appendChild(publishBtn);
+        }
 
-    if (state.auth.user?.role === "admin" && unit.status === "ACTIVE") {
-        const maintenanceBtn = document.createElement("button");
-        maintenanceBtn.className = "btn btn-danger btn-sm";
-        maintenanceBtn.innerText = "Údržba";
-        maintenanceBtn.onclick = () => {
-            if (confirm("Přepnout toto ubytování do údržby?")) {
-                // You'll need to import handleStartMaintenance
-                import("./Handlers.js").then(({ handleStartMaintenance }) => {
+        if (unit.status === "ACTIVE") {
+            const maintenanceBtn = document.createElement("button");
+            maintenanceBtn.className = "btn btn-danger btn-sm";
+            maintenanceBtn.innerText = "Údržba";
+            maintenanceBtn.onclick = () => {
+                if (confirm("Přepnout toto ubytování do údržby?")) {
                     handleStartMaintenance(unit.id);
-                });
-            }
-        };
-        actions.appendChild(maintenanceBtn);
+                }
+            };
+            actions.appendChild(maintenanceBtn);
+        }
     }
 
     card.appendChild(name);
@@ -263,6 +272,35 @@ export const renderReservations = (state) => {
     title.innerText = "Rezervace";
     header.appendChild(title);
     container.appendChild(header);
+
+    // FIX: Allow regular users to create reservations from here
+    if (state.auth.user && !isAdmin(state)) {
+        const form = document.createElement("div");
+        form.className = "reservation-form";
+        form.innerHTML = `
+            <h3>Vytvořit rezervaci</h3>
+            <div class="form-group">
+                <div>
+                    <label>Ubytování</label>
+                    <select id="unitSelectUser">
+                        ${state.rentalUnits.filter(u => u.status === "ACTIVE").map(u => 
+                            `<option value="${u.id}">${u.name} (${u.price} Kč)</option>`
+                        ).join("")}
+                    </select>
+                </div>
+                <div>
+                    <label>Od</label>
+                    <input type="date" id="dateFromUser" value="${new Date().toISOString().split('T')[0]}">
+                </div>
+                <div>
+                    <label>Do</label>
+                    <input type="date" id="dateToUser" value="${new Date(Date.now() + 86400000 * 3).toISOString().split('T')[0]}">
+                </div>
+                <button class="btn btn-success" onclick="window.createReservationUser()">Vytvořit rezervaci</button>
+            </div>
+        `;
+        container.appendChild(form);
+    }
 
     const grid = document.createElement("div");
     grid.className = "card-grid";
@@ -304,8 +342,8 @@ export const renderReservationCard = (res, state) => {
     const actions = document.createElement("div");
     actions.className = "actions";
 
-    // USER může zrušit
-    if (res.status !== "CANCELLED") {
+    // FIX: Only admin can cancel reservations
+    if (isAdmin(state) && res.status !== "CANCELLED") {
         const cancelBtn = document.createElement("button");
         cancelBtn.className = "btn btn-danger btn-sm";
         cancelBtn.innerText = "Zrušit";
@@ -317,8 +355,8 @@ export const renderReservationCard = (res, state) => {
         actions.appendChild(cancelBtn);
     }
 
-    // ADMIN může schválit
-    if (state.auth.user?.role === "admin" && res.status === "CREATED") {
+    // FIX: Only admin can approve reservations
+    if (isAdmin(state) && res.status === "CREATED") {
         const approveBtn = document.createElement("button");
         approveBtn.className = "btn btn-success btn-sm";
         approveBtn.innerText = "Schválit";
@@ -398,9 +436,15 @@ export const renderDetail = (state) => {
     return container;
 };
 
-// Make createReservation available globally for the form
-// Make createReservation available globally for the form
+// FIX: Create reservation function for admin (existing)
 window.createReservation = async () => {
+    const state = getState();
+    // Only admin can use this
+    if (!isAdmin(state)) {
+        alert("Pouze admin může vytvářet rezervace na této stránce.");
+        return;
+    }
+
     const unitSelect = document.getElementById("unitSelect");
     const dateFrom = document.getElementById("dateFrom");
     const dateTo = document.getElementById("dateTo");
@@ -420,7 +464,7 @@ window.createReservation = async () => {
         unitId: unitId,
         dateFrom: dateFrom.value,
         dateTo: dateTo.value,
-        guestId: getState().auth.user?.id || Date.now()
+        guestId: state.auth.user?.id || Date.now()
     };
 
     // Validate dates
@@ -432,3 +476,42 @@ window.createReservation = async () => {
     await handleCreateReservation(data);
 };
 
+// FIX: Create reservation function for regular users (new)
+window.createReservationUser = async () => {
+    const state = getState();
+    // Only regular users can use this
+    if (!state.auth.user || isAdmin(state)) {
+        alert("Tato funkce je pro běžné uživatele.");
+        return;
+    }
+
+    const unitSelect = document.getElementById("unitSelectUser");
+    const dateFrom = document.getElementById("dateFromUser");
+    const dateTo = document.getElementById("dateToUser");
+
+    if (!unitSelect || !dateFrom || !dateTo) {
+        alert("Prosím vyplňte všechny údaje");
+        return;
+    }
+
+    const unitId = parseInt(unitSelect.value);
+    if (isNaN(unitId)) {
+        alert("Prosím vyberte platné ubytování");
+        return;
+    }
+
+    const data = {
+        unitId: unitId,
+        dateFrom: dateFrom.value,
+        dateTo: dateTo.value,
+        guestId: state.auth.user?.id || Date.now()
+    };
+
+    // Validate dates
+    if (new Date(data.dateTo) <= new Date(data.dateFrom)) {
+        alert("Datum odjezdu musí být pozdější než datum příjezdu");
+        return;
+    }
+
+    await handleCreateReservation(data);
+};

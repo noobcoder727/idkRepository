@@ -117,6 +117,13 @@ let state = { ...initialState };
 export const getState = () => state;
 
 export const setState = (newState) => {
+  console.log("setState: Updating state from:", state);
+  console.log("setState: New state:", newState);
+  state = { ...state, ...newState };
+  console.log("setState: Final state:", state);
+  renderApp(); // auto rerender
+};
+/*export const setState = (newState) => {
     state = { ...state, ...newState };
     renderApp(); // auto rerender
-};
+};*/

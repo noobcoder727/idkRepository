@@ -1,5 +1,6 @@
 // IR05 Selektory (výběr dat ze stavu) - Duy Anh Le
 
+// IR05 Selektory (výběr dat ze stavu) - Duy Anh Le
 
 /* AUTH */
 
@@ -7,8 +8,10 @@
 export const getCurrentUser = (state) => state.auth.user;
 
 // je admin?
-export const isAdmin = (state) => state.auth.user?.role === "admin";
-
+export const isAdmin = (state) => {
+    const user = state.auth.user;
+    return user && user.role === "admin";
+};
 
 /* UNITS */
 
@@ -22,7 +25,6 @@ export const getAvailableUnits = (state) =>
 // konkrétní ubytování podle ID
 export const getUnitById = (state, id) =>
     state.rentalUnits.find(unit => unit.id === id);
-
 
 /* RESERVATIONS */
 
@@ -40,7 +42,6 @@ export const getMyReservations = (state) => {
 // rezervace podle ubytování
 export const getReservationsByUnit = (state, unitId) =>
     state.reservations.filter(r => r.unitId === unitId);
-
 
 /* DERIVED / SMART VALUES */
 

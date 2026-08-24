@@ -17,6 +17,19 @@ export const api = {
 
     // GET units
     fetchUnits: async () => {
+        console.log("MockApi.fetchUnits: Called");
+        await delay(1000);
+    
+        // simulace chyby (10% chance)
+        if (Math.random() < 0.1) {
+            console.log("MockApi.fetchUnits: Simulating error");
+            throw new Error("Nepodařilo se načíst ubytování");
+        }
+    
+        console.log("MockApi.fetchUnits: Returning:", mockUnits);
+        return [...mockUnits];
+    },
+    /*fetchUnits: async () => {
         await delay(1000);
 
         // simulace chyby (10% chance)
@@ -25,7 +38,7 @@ export const api = {
         }
 
         return mockUnits;
-    },
+    },*/
 
     // POST reservation
     createReservation: async (reservation) => {
